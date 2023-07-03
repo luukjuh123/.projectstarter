@@ -12,13 +12,20 @@ def cli(project_name):
     """
     This script initiates a new project with a set of predefined standards.
     """
-    # Create a new project with Poetry
-    subprocess.run(["poetry", "new", project_name], check=True)
+    subprocess.run(
+        [
+            "cookiecutter",
+            "--no-input",
+            TEMPLATES_DIR,
+            f"project_name={project_name}",
+        ],
+        check=True,
+    )
 
-    # Navigate to the project directory
     os.chdir(project_name)
 
-    # Add dependencies
+    subprocess.run(["poetry", "init", "--no-interaction"], check=True)
+
     subprocess.run(
         [
             "poetry",
@@ -29,16 +36,25 @@ def cli(project_name):
             "flake8-annotations",
             "black",
             "pre-commit",
+            "pytest",
+            "pytest-cov",
+            "sphinx",
+            "pylint",
         ],
         check=True,
     )
 
-    # Copy over template files
+    os.mkdir("docs")
+    os.system("sphinx-quickstart docs --no-sep -q -p project_name -a author -v version")
+
+    os.makedirs("tests")
+    with open(os.path.join("tests", "__init__.py"), "w") as f:
+        pass
+
     for filename in os.listdir(TEMPLATES_DIR):
         if filename.endswith(".toml") or filename.endswith(".yaml"):
             shutil.copy(os.path.join(TEMPLATES_DIR, filename), ".")
 
-    # Install pre-commit hooks
     subprocess.run(["poetry", "run", "pre-commit", "install"], check=True)
 
     click.echo(f"Project {project_name} has been created with predefined standards.")
